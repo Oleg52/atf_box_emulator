@@ -515,22 +515,29 @@ void InstallHooks()
 			(void**)&RegOpenKeyExWOrigFunc, (void*)RegOpenKeyExW_Hook, FALSE);
 	}
 
-	hModule = GetModuleHandleA("kernel32.dll");
-	if (hModule)
-	{
-		HookFunctionWithFallbackSafe(hModule, "GetSystemTime", funcEntryBytes, sizeof(funcEntryBytes),
-			NULL, (void*)GetSystemTime_Hook, FALSE);
-	}
-
 	// for win xp or 7
 	if (!hookedRegisry)
 	{
 		hModule = LoadLibraryA("advapi32.dll");
-
 		HookFunctionWithFallbackSafe(hModule, "RegOpenKeyExA", funcEntryBytes, sizeof(funcEntryBytes),
 			(void**)&RegOpenKeyExAOrigFunc, (void*)RegOpenKeyExA_Hook, TRUE);
 		HookFunctionWithFallbackSafe(hModule, "RegOpenKeyExW", funcEntryBytes, sizeof(funcEntryBytes),
 			(void**)&RegOpenKeyExWOrigFunc, (void*)RegOpenKeyExW_Hook, TRUE);
+	}
+
+	hModule = GetModuleHandleA("kernel32.dll");
+	if (hModule)
+	{
+		if (!hookedRegisry)
+		{
+			HookFunctionWithFallbackSafe(hModule, "RegOpenKeyExA", funcEntryBytes, sizeof(funcEntryBytes),
+				(void**)&RegOpenKeyExAOrigFunc, (void*)RegOpenKeyExA_Hook, FALSE);
+			HookFunctionWithFallbackSafe(hModule, "RegOpenKeyExW", funcEntryBytes, sizeof(funcEntryBytes),
+				(void**)&RegOpenKeyExWOrigFunc, (void*)RegOpenKeyExW_Hook, FALSE);
+		}
+
+		HookFunctionWithFallbackSafe(hModule, "GetSystemTime", funcEntryBytes, sizeof(funcEntryBytes),
+			NULL, (void*)GetSystemTime_Hook, FALSE);
 	}
 
 	hModule = LoadLibraryA("ftd2xx.dll");

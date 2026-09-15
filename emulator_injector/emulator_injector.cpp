@@ -100,6 +100,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    Sleep(1000);
+
     ResumeThread(pi.hThread);
     WaitForInputIdle(pi.hProcess, 5000);
     CloseHandle(pi.hThread);
