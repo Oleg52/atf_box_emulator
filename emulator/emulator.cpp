@@ -79,14 +79,16 @@ static const BYTE RSA_FILE_CONTENT[] = {
 	0x4A, 0x0A, 0xE3, 0x9B, 0x47, 0x9F, 0x7B, 0x60
 };
 
+// 10.3.80
 static const BYTE BOX_INFO_v10[] = {
 	0x1B, 0x1E, 0x78, 0x7F, 0xB0, 0x53, 0xA0, 0xE5, 0x10, 0xA1, 0xB2, 0xB1, 0x59, 0xFF, 0x66, 0x60,
 	// box fw info v10
-	0x41, 0x64, 0x76, 0x61, 0x6E, 0x63, 0x65, 0x42, 0x6F, 0x78, 0x20, 0x54, 0x75, 0x72, 0x62, 0x6F, 0x4C, 0x6F, 0x67, 0x69, 0x43, 0x6F, 0x72, 0x65, 0x20, 0x31, 0x30, 0x2E, 0x33, 0x2E, 0x35, 0x30,
+	0x41, 0x64, 0x76, 0x61, 0x6E, 0x63, 0x65, 0x42, 0x6F, 0x78, 0x20, 0x54, 0x75, 0x72, 0x62, 0x6F, 0x4C, 0x6F, 0x67, 0x69, 0x43, 0x6F, 0x72, 0x65, 0x20, 0x31, 0x30, 0x2E, 0x33, 0x2E, 0x38, 0x30,
 	// --
 	0x01, 0x0A, 0x55, 0x15
 };
 
+// 11.0.10
 static const BYTE BOX_INFO_v11[] = {
 	0x1B, 0x1E, 0x78, 0x7F, 0xB0, 0x53, 0xA0, 0xE5, 0x10, 0xA1, 0xB2, 0xB1, 0x59, 0xFF, 0x66, 0x60,
 	// box fw info v11
@@ -191,21 +193,7 @@ void CreateRsaFileIfNotExists()
 	}
 
 	char rsaPath[MAX_PATH];
-	GenerateRsaFilePath(rsaPath, 0x64, 0x41);
-
-	// some boxes have fw version starting like AdvancedBox... , some have ATF...
-	// we are emulating AdvancedBox... , so copy file if user already has valid rsa file
-	if (BOX_FW[0] != 0x64 || BOX_FW[1] != 0x41)
-	{
-		char originalRsaPath[MAX_PATH];
-		GenerateRsaFilePath(originalRsaPath, BOX_FW[0], BOX_FW[1]);
-		if (IsFileExists(originalRsaPath))
-		{
-			if (!IsFileExists(rsaPath)) CopyFileA(originalRsaPath, rsaPath, FALSE);
-			return;
-		}
-	}
-
+	GenerateRsaFilePath(rsaPath, BOX_FW[0], BOX_FW[1]);
 	if (IsFileExists(rsaPath))
 	{
 		return;
@@ -261,9 +249,6 @@ FT_READ_EMU_READ_EXIT:
 	{
 		// read first 2 bytes of fw string
 		BOX_FW[g_CurrentRequestIndex - 16] = DecryptAuthResponseByte(buffer[1]);
-		*lpdwBytesReturned = dwBytesToRead;
-		memcpy(lpBuffer, g_ResponseBuffer, dwBytesToRead);
-		goto FT_READ_EMU_READ_EXIT;
 	}
 	else if (g_ReadRequestType == ReadBoxSn && *lpdwBytesReturned > 0)
 	{
@@ -324,6 +309,12 @@ FT_STATUS __stdcall FT_Write_Hook(
 			if (g_CurrentRequestIndex == 16 || g_CurrentRequestIndex == 17)
 			{
 				g_ReadRequestType = ReadBoxFw;
+				goto CALL_FT_WRITE;
+			}
+
+			if (g_CurrentRequestIndex >= 16 && g_CurrentRequestIndex <= 39)
+			{
+				g_ReadRequestType = Unknown;
 				goto CALL_FT_WRITE;
 			}
 
